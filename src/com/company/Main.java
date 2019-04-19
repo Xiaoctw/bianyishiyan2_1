@@ -1,8 +1,5 @@
 package com.company;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -11,43 +8,23 @@ import java.util.*;
 public class Main {
 
     public static void main(String[] args) {
+        // write your code here
         try {
             new GrammaticalAnalysis();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
-
-
-    @Test
-    public void test(){
-        Production p=new Production("T",Arrays.asList("T","*","F"));
-        Production p1=new Production("T",Arrays.asList("T","*","F"));
-        Item item=new Item(p,0);
-        Item item1=new Item(p1,0);
-        HashSet<Item> set=new HashSet<>();
-        set.add(item);
-        Assert.assertFalse(set.contains(item1));
-        Assert.assertEquals(item, item1);
-        Assert.assertEquals(item, item);
-        Assert.assertEquals(p, p1);
-    }
 }
-
-/**
- * 产生式,代表文法当中一个个产生式
- */
 class GrammaticalAnalysis{
     private List<Production> productions;//产生式
-    private Map<String,HashSet<String>> FIRST;//FIRST符号集
+    private Map<String, HashSet<String>> FIRST;//FIRST符号集
     private Map<String,HashSet<String>> FOLLOW;//FOLLOW符号集
     private Set<String> table;//符号表
     private Set<String> nonTerminals;//非终结符
     private Map<String,Integer> indexes=new HashMap<>();
     private List<Cluster> clusters;//聚簇集合,可以通过索引找到对应的cluster
-    private Map<Cluster,Integer> clusterIntMap;//通过cluster找到对应的索引
-
-
+    private Map<Cluster,Integer> clusterIDMap;//通过cluster找到对应的索引
     private List<String> cols;
     private String[][] analyticalTable;//分析表
     public GrammaticalAnalysis() throws FileNotFoundException {
@@ -57,7 +34,7 @@ class GrammaticalAnalysis{
         table=new HashSet<>();
         clusters=new ArrayList<>();
         nonTerminals =new HashSet<>();
-        clusterIntMap=new HashMap<>();
+        clusterIDMap =new HashMap<>();
         InitProductions();
         for (String s : nonTerminals) {
             findFirsts(s);//获得了first集
@@ -65,10 +42,11 @@ class GrammaticalAnalysis{
         for (String s: nonTerminals){
             findFollows(s);
         }
-        makeCLusters();//得到所有的cluster列表
+        makeClusters();//得到所有的cluster列表
         makeAnalyticalTable();//获得对应的表
         PrintStream stream=new PrintStream(new File("/home/xiao/IdeaProjects/编译原理实验2_1/src/语法分析表"));
         stream.print("      |");
+        //接下来是打印表的过程
         for (String s : cols) {
             stream.printf("%-6s|",s);
         }
@@ -85,7 +63,16 @@ class GrammaticalAnalysis{
             }
             stream.println();
         }
+        //parse("")
+        List<Production> productionList=parse("/home/xiao/IdeaProjects/编译原理实验2_1/src/com/company/input");
+        for (Production production : productionList) {
+            System.out.print(production.left+"->");
 
+            for (String right : production.rights) {
+                System.out.print(right+" ");
+            }
+            System.out.println();
+        }
     }
     private void InitProductions(){
         table.addAll(Arrays.asList(";","int","double","float","id","=","+","-","*","/","(",")","num","if","then","else","do","while"));
@@ -93,9 +80,9 @@ class GrammaticalAnalysis{
         productions.add(new Production("P1", Collections.singletonList("P")));//不能忘记开始符号
         productions.add(new Production("P", Arrays.asList("D1","S1")));
         productions.add(new Production("D1",Arrays.asList("D",";","D1")));
-        productions.add(new Production("D1", new ArrayList<>()));
+        productions.add(new Production("D1", Arrays.asList("D",";")));
         productions.add(new Production("S1",Arrays.asList("S",";","S1")));
-        productions.add(new Production("S1", new ArrayList<>()));
+        productions.add(new Production("S1", Arrays.asList("S",";")));
         productions.add(new Production("D",Arrays.asList("T","L")));
         productions.add(new Production("T", Collections.singletonList("int")));
         productions.add(new Production("T", Collections.singletonList("float")));
@@ -113,8 +100,7 @@ class GrammaticalAnalysis{
         productions.add(new Production("F", Collections.singletonList("num")));
         productions.add(new Production("S",Arrays.asList("if","E","then","S1","else","S1")));
         productions.add(new Production("S",Arrays.asList("do","S1","while","E")));
-        cols=Arrays.asList(";","int","double","float","id","=","+","-","*","/","(",")","num","if","then","else","do","while","#",
-                "P1","P","D1","S1","D","S","T","L","E","F");
+        cols=Arrays.asList(";","int","double","float","id","=","+","-","*","/","(",")","num","if","then","else","do","while","#","P1","P","D1","S1","D","S","T","L","E","F");
         indexes.put(";",0);
         indexes.put("int",1);
         indexes.put("double",2);
@@ -144,6 +130,7 @@ class GrammaticalAnalysis{
         indexes.put("L",26);
         indexes.put("E",27);
         indexes.put("F",28);
+
     }
     private void findFirsts(String s){
         if(FIRST.containsKey(s)){
@@ -152,14 +139,17 @@ class GrammaticalAnalysis{
         FIRST.put(s,new HashSet<>());
         for (Production production : productions) {
             if(production.left.equals(s)){
+                // boolean flag=false;
                 for (int i = 0; i < production.rights.size(); i++) {
                     String f=production.rights.get(i);
                     if(f.equals(s)){
-                        continue;//检查下一项
+                        //       flag=true;
+                        //     continue;//检查下一个产生式
+                        break;
                     }
                     if(table.contains(f)){//是个终结符
-                    FIRST.get(s).add(f);
-                    break;
+                        FIRST.get(s).add(f);
+                        break;
                     }else {//是个非终结符
                         if (!FIRST.containsKey(f)) {
                             findFirsts(f);
@@ -171,6 +161,13 @@ class GrammaticalAnalysis{
                     }
                 }
             }
+
+
+
+
+
+
+
         }
     }
     private void makeAnalyticalTable(){
@@ -183,10 +180,10 @@ class GrammaticalAnalysis{
             for (String s : cluster.nexts.keySet()) {
                 Cluster cluster1 = cluster.nexts.get(s);
                 if (!nonTerminals.contains(s)) {//是个非终结符,包括#
-                    int j = clusterIntMap.get(cluster1);//跳到第j个状态
+                    int j = clusterIDMap.get(cluster1);//跳到第j个状态
                     analyticalTable[id][indexes.get(s)] = "S" + j;//跳转到下一个状态
                 } else {
-                    int j = clusterIntMap.get(cluster1);
+                    int j = clusterIDMap.get(cluster1);
                     analyticalTable[id][indexes.get(s)] = String.valueOf(j);
                 }
             }
@@ -199,6 +196,13 @@ class GrammaticalAnalysis{
                 }
             }
         }
+        Item item=new Item(productions.get(0),1);
+        for (Cluster cluster : clusters) {
+            if(contains1(cluster.items,item)){
+                analyticalTable[cluster.clusterID][indexes.get("#")]="acc";
+                break;
+            }
+        }
     }
     /**
      * 找到一个符号的
@@ -209,7 +213,7 @@ class GrammaticalAnalysis{
             return;
         }
         FOLLOW.put(s,new HashSet<>());
-        if(s.equals("P1")){
+        if(s.equals("E1")){
             FOLLOW.get(s).add("#");
         }
         for (Production production : productions) {
@@ -250,7 +254,7 @@ class GrammaticalAnalysis{
         }
     }
 
-    private void makeCLusters(){
+    private void makeClusters(){
         Set<Cluster> clusterSet;//簇组成的集合
         Queue<Cluster> clusterQueue;//簇组成的队列
         clusterSet=new HashSet<>();
@@ -260,34 +264,33 @@ class GrammaticalAnalysis{
         Item item=new Item(firstPro,0);//获取第一个项目
         Cluster firstCluster=getClusterReferItems(item);
         clusterQueue.offer(firstCluster);
-        //clusterSet.add(firstCluster);
+        clusterSet.add(firstCluster);
         while (!clusterQueue.isEmpty()){
-            Cluster cluster=clusterQueue.poll();
-            clusterSet.add(cluster);//把这个加入到序列中
-            cluster.clusterID=id;//这里相当于是一个双向索引
-            clusterIntMap.put(cluster,id);
+            Cluster temCluster=clusterQueue.poll();
+            temCluster.clusterID=id;//这里相当于是一个双向索引
+            clusterIDMap.put(temCluster,id);
             id++;
-            for (Item item1 : cluster.items) {
-                int loc=item1.loc;
-                int len=item1.len;
+            for (Item temItem : temCluster.items) {
+                int loc=temItem.loc;
+                int len=temItem.len;
                 if(loc+1<=len){
-                    Item item2=new Item(item1.production,item1.loc+1);//得到了下一个项目
+                    Item newItem=new Item(temItem.production,temItem.loc+1);//得到了下一个项目
                     boolean flag=true;
                     Cluster cluster2=null;
                     for (Cluster cluster1 : clusterSet) {
-                       // if (cluster1.contains(item2)){
-                        if(contains1(cluster1.items,item2)){
+                        if(contains1(cluster1.items,newItem)){//全部都包含
                             flag=false;
                             cluster2=cluster1;
                         }
                     }
                     if(flag){//需要新建一个簇
-                        Cluster cluster1=getClusterReferItems(item2);
+                        Cluster cluster1=getClusterReferItems(newItem);
                         clusterQueue.offer(cluster1);//加入到队列当中
-                    //    clusterSet.add(cluster1);//加入到集合当中
-                        cluster.nexts.put(item1.production.rights.get(loc),cluster1);
+                        clusterSet.add(cluster1);
+                        temCluster.nexts.put(temItem.production.rights.get(loc),cluster1);
+                        //  }
                     }else {
-                        cluster.nexts.put(item1.production.rights.get(loc),cluster2);
+                        temCluster.nexts.put(temItem.production.rights.get(loc),cluster2);
                     }
                 }
             }
@@ -303,9 +306,10 @@ class GrammaticalAnalysis{
         Set<Item> set=cluster.items;//获得对应的集合
         Queue<Item> queue=new LinkedList<>();
         queue.offer(item);
+        set.add(item);
         while (!queue.isEmpty()){
             Item tempItem=queue.poll();
-            set.add(tempItem);
+            //   set.add(tempItem);
             if(tempItem.production.rights.isEmpty()){//这是一个空产生式
                 set.add(new Item(tempItem.production,0));//如果是空产生式的话直接把产生式加进去就可以了
             }else {
@@ -314,9 +318,9 @@ class GrammaticalAnalysis{
                     for (Production p : productions) {
                         if (p.left.equals(left)) {
                             Item item2 = new Item(p, 0);
-                            if (!contains1(set,item2)) {
+                            if (!contains1(set,item2)) {//要继承哈希函数!!!!!
                                 queue.offer(item2);
-                              //  set.add(item2);//把该产生式加入进去
+                                set.add(item2);//把该产生式加入进去
                             }
                         }
                     }
@@ -339,40 +343,71 @@ class GrammaticalAnalysis{
      * 真正的从关系表中获得产生式序列的过程.
      * @return
      */
-    private List<Production> parse(){
+    private List<Production> parse(String filePath){
         List<Production> productionList=new ArrayList<>();//保存最后的结果
         Stack<Integer> stateStack=new Stack<>();//状态栈
         Stack<String> tokenStack=new Stack<>();//符号栈
         stateStack.push(0);
         tokenStack.push("#");
-        String pre=null;
         try {
-            Scanner in=new Scanner(new File(""));
+            Scanner in=new Scanner(new File(filePath));
             List<String> list=new ArrayList<>();
             while (in.hasNext()){
-                list.add(in.next());
+                list.add(in.nextLine());
             }
-                int j=0;
-            while (j<list.size()) {
+            int listSize=list.size();
+            int j=0;
+            while (true) {
+                if(j>=list.size()){
+                    break;
+                }
                 String string=list.get(j);
                 String ch = dealToken(string);
-                if (analyticalTable[stateStack.peek()][indexes.get(ch)].charAt(0) == 'S') {//这是一个移进项目
-                    int state = analyticalTable[stateStack.peek()][indexes.get(ch)].charAt(1) - '0';
+                int index_i,index_j;
+                if (analyticalTable[stateStack.peek()][indexes.get(ch)]==null) {
+                    index_j=indexes.get(ch);
+                    List<Integer> list1=new ArrayList<>();
+                    for (int i1 = 0; i1 < analyticalTable.length; i1++) {
+                        if(analyticalTable[i1][index_j]!=null){
+                            list1.add(i1);
+                        }
+                    }
+                    index_i= list1.get(((int)(Math.random()*list1.size())));
+                    j++;
+                   // return productionList;
+                }else if(analyticalTable[stateStack.peek()][indexes.get(ch)].equals("acc")){
+                    break;
+                }else{
+                    index_i=stateStack.peek();
+                    index_j=indexes.get(ch);
+                }
+                if (analyticalTable[index_i][index_j].charAt(0) == 'S') {//这是一个移进项目
+                    int state = Integer.parseInt(analyticalTable[index_i][index_j].substring(1));
                     stateStack.push(state);
                     tokenStack.push(ch);
                     j++;
-                } else if (analyticalTable[stateStack.peek()][indexes.get(ch)].charAt(0) == 'r') {//规约项目
-                    int num = analyticalTable[stateStack.peek()][indexes.get(ch)].charAt(1) - '0';//产生式的序号
+                } else if (analyticalTable[index_i][index_j].charAt(0) == 'r') {//规约项目
+                    int num = Integer.parseInt(analyticalTable[index_i][index_j].substring(1));//产生式的序号,注意产生式可能有很多位
                     Production production = productions.get(num);
                     int len = production.rights.size();
                     for (int i = 0; i < len; i++) {
+                        if(stateStack.empty()||tokenStack.empty()){
+                            break;
+                        }
                         stateStack.pop();
                         tokenStack.pop();
                     }
                     String left=production.left;
                     productionList.add(production);//将这个产生式加入进去
                     tokenStack.push(left);
-                    stateStack.push(Integer.valueOf(analyticalTable[stateStack.peek()][indexes.get(left)]));//将栈压入
+                    if(stateStack.empty()){
+                        stateStack.add(0);
+                    }
+                    if(analyticalTable[stateStack.peek()][indexes.get(left)]==null){
+                        stateStack.push((int) (Math.random()*clusters.size()));
+                    }else {
+                        stateStack.push(Integer.valueOf((analyticalTable[stateStack.peek()][indexes.get(left)])));//将栈压入
+                    }
                 }
             }
         }
@@ -382,7 +417,7 @@ class GrammaticalAnalysis{
         return productionList;
     }
     private String dealToken(String s){
-        String[] strings=s.split("\t");
+        String[] strings= s.split("\t");
         if(strings[1].charAt(1)=='标'){
             return "id";//这是一个标识符
         }else if(strings[1].charAt(1)=='常'){
@@ -398,7 +433,7 @@ class Production{
     String left;
     List<String> rights;
 
-    public Production(String left, List<String> rights) {
+    Production(String left, List<String> rights) {
         this.left = left;
         this.rights = rights;
     }
@@ -418,6 +453,11 @@ class Production{
         }
         return res;
     }
+
+    @Override
+    public int hashCode() {
+        return left.length()+rights.size();
+    }
 }
 
 /**
@@ -428,7 +468,7 @@ class Item{
     int len;//产生式右部的长度
     int loc;//点的位置,从0-len
     Set<String> stringSet;
-    public Item(Production production, int loc) {
+    Item(Production production, int loc) {
         this.production = production;
         len= production.rights.size();
         this.loc=loc;
@@ -442,6 +482,11 @@ class Item{
         }
         return this.production.equals(((Item) o).production)&&this.loc==((Item) o).loc;
     }
+
+    @Override
+    public int hashCode() {
+        return this.len+this.loc+production.rights.size();
+    }
 }
 
 //一个聚簇,包含很多个项目
@@ -453,10 +498,20 @@ class Cluster{
         this.items = items;
         nexts=new HashMap<>();
     }
-    public Cluster() {
+    Cluster() {
         items=new HashSet<>();
         nexts=new HashMap<>();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof Cluster)){
+            return false;
+        }
+        return clusterID==((Cluster)o).clusterID;
+    }
+
+
     public void add(Item item){
         items.add(item);
     }
@@ -464,3 +519,4 @@ class Cluster{
         return items.contains(item);
     }
 }
+
