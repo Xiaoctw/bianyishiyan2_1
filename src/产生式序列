@@ -1,0 +1,49 @@
+T->int 
+T->double 
+T->double 
+T->double 
+T->int 
+T->double 
+S->if E then S1 else S1 
+F->id 
+T->float 
+T->double 
+T->double 
+T->float 
+T->T * F 
+E->T 
+F->num 
+S1->S ; S1 
+F->id 
+T->double 
+F->num 
+E->E - T 
+F->num 
+S1->S ; 
+F->id 
+T->F 
+F->num 
+T->F 
+D1->D ; D1 
+S->if E then S1 else S1 
+T->T * F 
+E->E - T 
+E->E + T 
+T->T * F 
+T->float 
+F->id 
+T->T * F 
+F->id 
+T->F 
+T->float 
+S1->S ; 
+F->id 
+T->F 
+F->num 
+T->T / F 
+D1->D ; 
+T->double 
+F->num 
+T->T / F 
+P->D1 S1 
+P1->P 

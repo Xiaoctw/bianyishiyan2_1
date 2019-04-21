@@ -1,0 +1,10 @@
+P: #
+P1: #
+S: ;
+D: ;
+T: ) * id ; + then - /
+E: ) ; + then -
+F: ) * id ; + then - /
+L: ;
+D1: id do if
+S1: # else while

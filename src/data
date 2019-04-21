@@ -1,0 +1,16 @@
+int a;
+double b;
+int c;
+double e;
+float f;
+b=4;
+do b=b+a while f;
+a=3;
+f=5;
+c=5*a;
+do c=c+3 while a;
+e=4*b;
+e=e*;
+e=c f;
+if a=4 then c=c*7 else d=d/4;
+do a=a*5 while e;

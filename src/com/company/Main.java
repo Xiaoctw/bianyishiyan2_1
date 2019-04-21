@@ -8,7 +8,6 @@ import java.util.*;
 public class Main {
 
     public static void main(String[] args) {
-        // write your code here
         try {
             new GrammaticalAnalysis();
         } catch (FileNotFoundException e) {
@@ -27,7 +26,7 @@ class GrammaticalAnalysis{
     private Map<Cluster,Integer> clusterIDMap;//通过cluster找到对应的索引
     private List<String> cols;
     private String[][] analyticalTable;//分析表
-    public GrammaticalAnalysis() throws FileNotFoundException {
+    GrammaticalAnalysis() throws FileNotFoundException {
         productions=new ArrayList<>();
         FIRST=new HashMap<>();
         FOLLOW=new HashMap<>();
@@ -50,6 +49,9 @@ class GrammaticalAnalysis{
         for (String s : cols) {
             stream.printf("%-6s|",s);
         }
+        //parse("")
+        List<Production> productionList=parse("/home/xiao/IdeaProjects/编译原理实验2_1/src/com/company/input");
+        maketable();
         stream.println();
         for (int i = 0; i < analyticalTable.length; i++) {
             stream.printf("%-6d|",i);
@@ -63,15 +65,39 @@ class GrammaticalAnalysis{
             }
             stream.println();
         }
-        //parse("")
-        List<Production> productionList=parse("/home/xiao/IdeaProjects/编译原理实验2_1/src/com/company/input");
+        stream.close();
+        PrintStream stream1=new PrintStream(new File("/home/xiao/IdeaProjects/编译原理实验2_1/src/产生式序列"));
         for (Production production : productionList) {
-            System.out.print(production.left+"->");
-
+            stream1.print(production.left+"->");
             for (String right : production.rights) {
-                System.out.print(right+" ");
+                stream1.print(right+" ");
             }
-            System.out.println();
+            stream1.println();
+        }
+        stream1.close();
+        printFirstAndFollow();
+        dealWithError();
+    }
+    private void printFirstAndFollow(){
+        try {
+            PrintStream stream=new PrintStream(new File("/home/xiao/IdeaProjects/编译原理实验2_1/src/FIRST"));
+            for (String s : FIRST.keySet()) {
+                stream.print(s+":");
+                for (String s1 : FIRST.get(s)) {
+                    stream.print(" "+s1);
+                }
+                stream.println();
+            }
+            PrintStream stream1=new PrintStream(new File("/home/xiao/IdeaProjects/编译原理实验2_1/src/FOLLOW"));
+            for (String s : FOLLOW.keySet()) {
+                stream1.print(s+":");
+                for (String s1 : FOLLOW.get(s)) {
+                    stream1.print(" "+s1);
+                }
+                stream1.println();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
     private void InitProductions(){
@@ -204,6 +230,71 @@ class GrammaticalAnalysis{
             }
         }
     }
+    private void maketable(){//e1缺少运算符,e2缺少运算数
+        for (Cluster cluster : clusters) {
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","-","T")),1))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e1";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","+","T")),1))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e1";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","/","T")),1))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e1";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","*","T")),1))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e1";
+                    }
+                }
+            }
+        }
+        for (Cluster cluster : clusters) {
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","-","T")),2))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e2";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","+","T")),2))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e2";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","/","T")),2))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e2";
+                    }
+                }
+            }
+            if (contains1(cluster.items,new Item(new Production("E",Arrays.asList("E","*","T")),2))){
+                for (int j = 0; j < cols.size(); j++) {
+                    if(analyticalTable[cluster.clusterID][j]==null){
+                        analyticalTable[cluster.clusterID][j]="e2";
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < clusters.size(); i++) {
+            analyticalTable[i][indexes.get("P1")]=null;
+        }
+    }
     /**
      * 找到一个符号的
      * @param s 一个字符
@@ -213,7 +304,7 @@ class GrammaticalAnalysis{
             return;
         }
         FOLLOW.put(s,new HashSet<>());
-        if(s.equals("E1")){
+        if(s.equals("P1")){
             FOLLOW.get(s).add("#");
         }
         for (Production production : productions) {
@@ -358,7 +449,7 @@ class GrammaticalAnalysis{
             int listSize=list.size();
             int j=0;
             while (true) {
-                if(j>=list.size()){
+                if(j>=listSize){
                     break;
                 }
                 String string=list.get(j);
@@ -414,8 +505,30 @@ class GrammaticalAnalysis{
         catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        int len=productionList.size();
+        Production lastPro=productionList.get(len-1);
+        if(!lastPro.equals(new Production("P1", Collections.singletonList("P")))){
+            Production temp=lastPro;
+            while (!temp.equals(new Production("P1", Collections.singletonList("P")))){
+                String left=temp.left;
+                List<Production> list = new ArrayList<>();
+                for (Production production : productions) {
+                    if (production.rights.contains(left)) {
+                        list.add(production);
+                    }
+                }
+                temp = list.get((int) (Math.random() * list.size()));
+                productionList.add(temp);
+            }
+        }
         return productionList;
     }
+
+    /**
+     * 对token字进行相应的处理
+     * @param s
+     * @return
+     */
     private String dealToken(String s){
         String[] strings= s.split("\t");
         if(strings[1].charAt(1)=='标'){
@@ -427,6 +540,43 @@ class GrammaticalAnalysis{
         }
     }
 
+    private void dealWithError(){
+        boolean flag1,flag2;
+        flag1=true;
+        flag2=true;
+        String filePath="/home/xiao/IdeaProjects/编译原理实验2_1/src/com/company/input";
+        Scanner in;
+        try {
+            in=new Scanner(new File(filePath));
+            List<String> tokens=new ArrayList<>();
+            while (in.hasNext()){
+                tokens.add(dealToken(in.nextLine()));
+            }
+            int i=0;
+            Set<String> operators=new HashSet<>();
+            operators.addAll(Arrays.asList("+","-","*","/"));
+            Set<String> ope=new HashSet<>();
+            ope.addAll(Arrays.asList("id","num"));
+            while (i<tokens.size()){
+                if(flag1) {
+                    if (i > 1 && (ope.contains(tokens.get(i - 1))) && (tokens.get(i).equals("id") || tokens.get(i).equals("num"))) {
+                        System.out.println("第" + i + "个token字出现错误,缺少运算符");
+                        flag1 = false;
+                    }
+                }
+                if(flag2) {
+                    if (i > 1 && (operators.contains(tokens.get(i - 1))) && (tokens.get(i).equals(";"))) {
+                        System.out.println("第" + i + "个token字出现错误,缺少运算数");
+                        flag2 = false;
+                    }
+                }
+                i++;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 }
 class Production{
